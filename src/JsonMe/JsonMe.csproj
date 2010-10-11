@@ -39,6 +39,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConcurrentCache.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="IJsonConverter.cs" />
     <Compile Include="JsonContract.cs" />
@@ -47,6 +48,7 @@
     <Compile Include="JsonSerializer.cs" />
     <Compile Include="JsonUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PropertySetter.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

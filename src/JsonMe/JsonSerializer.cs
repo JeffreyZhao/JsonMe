@@ -17,14 +17,9 @@ namespace JsonMe
             foreach (var property in contract.Properties)
             {
                 var value = property.PropertyInfo.GetValue(entity, null);
-                value = JsonUtils.ToJsonValue(property, value);
+                var jsonValue = JsonUtils.ToJsonValue(property, value);
 
-                if (JsonUtils.ShouldSerialize(value))
-                {
-                    throw new ContractMissingException(value);
-                }
-
-                jsonObject.Add(property.Name, JsonUtils.ToJson(value));
+                jsonObject.Add(property.Name, jsonValue);
             }
 
             return jsonObject;
@@ -68,9 +63,7 @@ namespace JsonMe
                     throw new KeyNotFoundException(jsonObj, property.Name);
                 }
 
-                var value = JsonUtils.FromJsonValue(property, jsonValue);
-
-                property.PropertyInfo.SetValue(entity, value, null);
+                JsonUtils.SetProperty(entity, property, jsonValue);
             }
 
             return entity;

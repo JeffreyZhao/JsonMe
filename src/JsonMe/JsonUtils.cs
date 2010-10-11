@@ -36,25 +36,16 @@ namespace JsonMe
                     typeof(bool),
                     new JsonPrimitiveProvider(p => (bool)p, o => new JsonPrimitive((bool)o))
                 },
+                {
+                    typeof(DateTime),
+                    new JsonPrimitiveProvider(p => (DateTime)p, o => new JsonPrimitive((DateTime)o))
+                }
             };
-
-        public static bool IsPrimitive(object value)
-        {
-            if (value == null) return true;
-
-            return s_primitiveProviders.ContainsKey(value.GetType());
-        }
-
-        public static bool ShouldSerialize(object value)
-        {
-            if (IsPrimitive(value)) return false;
-
-            return !(value is JsonValue);
-        }
 
         public static JsonValue ToJson(object value)
         {
-            if (value == null) return null;
+            if (value == null)
+                return null;
 
             var jsonValue = value as JsonValue;
             if (jsonValue != null) return jsonValue;
@@ -70,7 +61,7 @@ namespace JsonMe
             {
                 return new JsonObject(dict.ToDictionary(p => p.Key, p => ToJson(p.Value)));
             }
-
+            
             var array = value as IEnumerable;
             if (array != null)
             {
@@ -99,50 +90,26 @@ namespace JsonMe
             }
             catch (Exception ex)
             {
-                throw new ConversionException(property, value, ex);
+                throw new ConversionException(property.PropertyInfo, value, ex);
             }
         }
 
-        public static object FromJsonValue(IJsonProperty property, JsonValue value)
+        public static void SetProperty(object entity, IJsonProperty property, JsonValue value)
         {
             var propertyType = property.PropertyInfo.PropertyType;
 
-            if (property.Converter == null)
+            object propertyValue;
+            try
             {
-                if (propertyType.IsAssignableFrom(value.GetType()))
-                {
-                    return value;
-                }
+                propertyValue = property.Converter == null ? value : 
+                    property.Converter.FromJsonValue(propertyType, value);
+            }
+            catch (Exception ex)
+            {
+                throw new ConversionException(property.PropertyInfo, value, ex);
+            }
 
-                var primitive = value as JsonPrimitive;
-                if (primitive == null)
-                {
-                    throw new ConversionException(property, value, null);
-                }
-                else
-                {
-                    JsonPrimitiveProvider provider;
-                    if (s_primitiveProviders.TryGetValue(propertyType, out provider))
-                    {
-                        return provider.FromPrimitive(primitive);
-                    }
-                    else
-                    {
-                        throw new ConversionException(property, value, null);
-                    }
-                }
-            }
-            else
-            {
-                try
-                {
-                    return property.Converter.FromJsonValue(propertyType, value);
-                }
-                catch (Exception ex)
-                {
-                    throw new ConversionException(property, value, ex);
-                }
-            }
+            PropertySetter.Set(entity, property.PropertyInfo, propertyValue);
         }
     }
 }

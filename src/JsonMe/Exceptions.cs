@@ -74,21 +74,21 @@ namespace JsonMe
 
     public class ConversionException : MappingException
     {
-        public IJsonProperty Property { get; private set; }
+        public PropertyInfo PropertyInfo { get; private set; }
 
         public object Value { get; private set; }
 
-        public ConversionException(IJsonProperty property, object value, Exception innerException)
-            : base(BuildMessage(property, value), innerException)
+        public ConversionException(PropertyInfo propertyInfo, object value, Exception innerException)
+            : base(BuildMessage(propertyInfo, value), innerException)
         {
-            this.Property = property;
+            this.PropertyInfo = propertyInfo;
             this.Value = value;
         }
 
-        private static string BuildMessage(IJsonProperty property, object value)
+        private static string BuildMessage(PropertyInfo propertyInfo, object value)
         {
             return String.Format(
-                "Error occurred when converting value {0} for {1}", value, property.PropertyInfo);
+                "Error occurred when converting value {0} for {1}", value, propertyInfo);
         }
     }
 }

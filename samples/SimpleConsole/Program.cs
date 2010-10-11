@@ -88,7 +88,13 @@ namespace SimpleConsole
             Console.WriteLine(jsonCategory.ToString());
             Console.WriteLine();
 
-            var value = new { v = JsonSerializer.SerializeObject(category, s_categoryContract) };
+            var value = new
+            {
+                c = JsonSerializer.SerializeObject(category, s_categoryContract),
+                d = user,
+                a = (string)null,
+                p = new object[] { 1, 2, 3, null }
+            };
             Console.WriteLine(JsonSerializer.Serialize(value).ToString());
         }
 
