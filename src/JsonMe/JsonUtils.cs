@@ -2,82 +2,146 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Json;
+using System.Collections;
 
 namespace JsonMe
 {
     internal static class JsonUtils
     {
+        private static Dictionary<Type, JsonPrimitiveProvider> s_primitiveProviders =
+            new Dictionary<Type, JsonPrimitiveProvider>
+            {
+                { 
+                    typeof(int),
+                    new JsonPrimitiveProvider(p => (int)p, o => new JsonPrimitive((int)o))
+                },
+                { 
+                    typeof(long),
+                    new JsonPrimitiveProvider(p => (long)p, o => new JsonPrimitive((long)o))
+                },
+                { 
+                    typeof(float),
+                    new JsonPrimitiveProvider(p => (float)p, o => new JsonPrimitive((float)o))
+                },
+                { 
+                    typeof(double),
+                    new JsonPrimitiveProvider(p => (double)p, o => new JsonPrimitive((double)o))
+                },
+                { 
+                    typeof(string),
+                    new JsonPrimitiveProvider(p => (string)p, o => new JsonPrimitive((string)o))
+                },
+                { 
+                    typeof(bool),
+                    new JsonPrimitiveProvider(p => (bool)p, o => new JsonPrimitive((bool)o))
+                },
+            };
+
         public static bool IsPrimitive(object value)
         {
-            if (value == null) return false;
+            if (value == null) return true;
 
-            var type = value.GetType();
-            return 
-                type == typeof(int) ||
-                type == typeof(long) ||
-                type == typeof(string) ||
-                type == typeof(bool);
+            return s_primitiveProviders.ContainsKey(value.GetType());
         }
 
         public static bool ShouldSerialize(object value)
         {
             if (IsPrimitive(value)) return false;
 
-            var type = value.GetType();
-            var isBuiltIn =
-                type == typeof(JsonArray) ||
-                type == typeof(JsonObject);
-
-            return !isBuiltIn;
+            return !(value is JsonValue);
         }
 
-        public static object ToJson(object value)
+        public static JsonValue ToJson(object value)
         {
-            if (IsPrimitive(value))
+            if (value == null) return null;
+
+            var jsonValue = value as JsonValue;
+            if (jsonValue != null) return jsonValue;
+
+            JsonPrimitiveProvider provider;
+            if (s_primitiveProviders.TryGetValue(value.GetType(), out provider))
             {
-                return value;
+                return provider.ToPrimitive(value);
             }
 
-            var jsonObj = value as Dictionary<string, object>;
-            if (jsonObj != null)
+            var dict = value as Dictionary<string, object>;
+            if (dict != null)
             {
-                return new JsonObject(jsonObj);
+                return new JsonObject(dict.ToDictionary(p => p.Key, p => ToJson(p.Value)));
             }
 
-            var jsonArray = value as object[];
-            if (jsonArray != null)
+            var array = value as IEnumerable;
+            if (array != null)
             {
-                return new JsonArray(jsonArray);
+                return new JsonArray(array.Cast<object>().Select(o => ToJson(o)));
             }
 
-            throw new Exception("Unrecognized type: " + value.GetType());
+            var jsonObject = new JsonObject();
+            foreach (var property in value.GetType().GetProperties().Where(p => !p.IsSpecialName))
+            {
+                jsonObject.Add(property.Name, ToJson(property.GetValue(value, null)));
+            }
+
+            return jsonObject;
         }
 
-        public static object ToJsonValue(IJsonProperty property, object value)
+        public static JsonValue ToJsonValue(IJsonProperty property, object value)
         {
-            if (property.Converter == null) return value;
-
             try
             {
+                if (property.Converter == null)
+                {
+                    return JsonUtils.ToJson(value);
+                }
+
                 return property.Converter.ToJsonValue(property.PropertyInfo.PropertyType, value);
             }
             catch (Exception ex)
             {
-                return new ConversionException(property, value, ex);
+                throw new ConversionException(property, value, ex);
             }
         }
 
-        public static object FromJsonValue(IJsonProperty property, object value)
+        public static object FromJsonValue(IJsonProperty property, JsonValue value)
         {
-            if (property.Converter == null) return value;
+            var propertyType = property.PropertyInfo.PropertyType;
 
-            try
+            if (property.Converter == null)
             {
-                return property.Converter.FromJsonValue(property.PropertyInfo.PropertyType, value);
+                if (propertyType.IsAssignableFrom(value.GetType()))
+                {
+                    return value;
+                }
+
+                var primitive = value as JsonPrimitive;
+                if (primitive == null)
+                {
+                    throw new ConversionException(property, value, null);
+                }
+                else
+                {
+                    JsonPrimitiveProvider provider;
+                    if (s_primitiveProviders.TryGetValue(propertyType, out provider))
+                    {
+                        return provider.FromPrimitive(primitive);
+                    }
+                    else
+                    {
+                        throw new ConversionException(property, value, null);
+                    }
+                }
             }
-            catch (Exception ex)
+            else
             {
-                return new ConversionException(property, value, ex);
+                try
+                {
+                    return property.Converter.FromJsonValue(propertyType, value);
+                }
+                catch (Exception ex)
+                {
+                    throw new ConversionException(property, value, ex);
+                }
             }
         }
     }

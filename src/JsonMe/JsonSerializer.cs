@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Web.Script.Serialization;
+using System.Json;
 
 namespace JsonMe
 {
@@ -24,7 +24,7 @@ namespace JsonMe
                     throw new ContractMissingException(value);
                 }
 
-                jsonObject.Add(property.Name, value);
+                jsonObject.Add(property.Name, JsonUtils.ToJson(value));
             }
 
             return jsonObject;
@@ -34,16 +34,9 @@ namespace JsonMe
         {
             if (entities == null) return null;
 
+            
             var jsonEntities = entities.Select(e => SerializeObject(e, contract));
-            var jsonArray = new JsonArray();
-            jsonArray.AddRange(jsonEntities);
-
-            return jsonArray;
-        }
-        
-        public static string Serialize(object entity)
-        {
-            return new JavaScriptSerializer().Serialize(entity);
+            return new JsonArray(jsonEntities.Cast<JsonValue>());
         }
 
         public static T DeserializeObject<T>(string jsonString, JsonContract<T> contract)
@@ -69,13 +62,13 @@ namespace JsonMe
 
             foreach (var property in contract.Properties)
             {
-                dynamic value;
-                if (!jsonObj.TryGetValue(property.Name, out value))
+                JsonValue jsonValue;
+                if (!jsonObj.TryGetValue(property.Name, out jsonValue))
                 {
                     throw new KeyNotFoundException(jsonObj, property.Name);
                 }
 
-                value = JsonUtils.FromJsonValue(property, value);
+                var value = JsonUtils.FromJsonValue(property, jsonValue);
 
                 property.PropertyInfo.SetValue(entity, value, null);
             }
@@ -89,19 +82,21 @@ namespace JsonMe
             return jsonArray.Select(e => DeserializeObject((JsonObject)e, contract)).ToList();
         }
 
-        public static object Deserialize(string jsonString)
+        public static JsonValue Deserialize(string jsonString)
         {
-            object obj;
             try
             {
-                obj = new JavaScriptSerializer().DeserializeObject(jsonString);
+                return JsonValue.Parse(jsonString);
             }
             catch (Exception ex)
             {
                 throw new JsonFormatException(jsonString, ex);
             }
+        }
 
-            return JsonUtils.ToJson(obj);           
+        public static JsonValue Serialize(object entity)
+        {
+            return JsonUtils.ToJson(entity);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Reflection;
+using System.Json;
 
 namespace JsonMe
 {
@@ -65,12 +66,12 @@ namespace JsonMe
                 this.Contract = contract;
             }
 
-            public object ToJsonValue(Type type, object value)
+            public JsonValue ToJsonValue(Type type, object value)
             {
                 return JsonSerializer.SerializeObject<TProperty>((TProperty)value, this.Contract);
             }
 
-            public object FromJsonValue(Type type, object value)
+            public object FromJsonValue(Type type, JsonValue value)
             {
                 return JsonSerializer.DeserializeObject<TProperty>((JsonObject)value, this.Contract);
             }
@@ -97,12 +98,12 @@ namespace JsonMe
                 this.Contract = contract;
             }
 
-            public object ToJsonValue(Type type, object value)
+            public JsonValue ToJsonValue(Type type, object value)
             {
                 return JsonSerializer.SerializeArray<TElement>((IEnumerable<TElement>)value, this.Contract);
             }
 
-            public object FromJsonValue(Type type, object value)
+            public object FromJsonValue(Type type, JsonValue value)
             {
                 var array = JsonSerializer.DeserializeArray<TElement>((JsonArray)value, this.Contract);
                 if (array == null) return null;

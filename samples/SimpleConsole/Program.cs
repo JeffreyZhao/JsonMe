@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Json;
 using JsonMe;
 
 namespace SimpleConsole
@@ -29,12 +30,12 @@ namespace SimpleConsole
 
     public class DataTimeConverter : IJsonConverter
     {
-        public object ToJsonValue(Type type, object value)
+        public JsonValue ToJsonValue(Type type, object value)
         {
             return ((DateTime)value).ToString("R");
         }
 
-        public object FromJsonValue(Type type, object value)
+        public object FromJsonValue(Type type, JsonValue value)
         {
             return DateTime.ParseExact((string)value, "R", null);
         }
@@ -65,11 +66,11 @@ namespace SimpleConsole
         static void SerializeTest()
         {
             var user = new User { UserName = "Tom", Age = 20 };
-            Console.WriteLine(JsonSerializer.SerializeObject(user, s_userContract));
+            Console.WriteLine(JsonSerializer.SerializeObject(user, s_userContract).ToString());
             Console.WriteLine();
 
             var post = new Post { Title = "Good day today.", CreateTime = DateTime.Now };
-            Console.WriteLine(JsonSerializer.SerializeObject(post, s_postContract));
+            Console.WriteLine(JsonSerializer.SerializeObject(post, s_postContract).ToString());
             Console.WriteLine();
 
             var category = new Category
@@ -84,19 +85,19 @@ namespace SimpleConsole
                 }
             };
             var jsonCategory = JsonSerializer.SerializeObject(category, s_categoryContract);
-            Console.WriteLine(jsonCategory);
+            Console.WriteLine(jsonCategory.ToString());
             Console.WriteLine();
 
             var value = new { v = JsonSerializer.SerializeObject(category, s_categoryContract) };
-            Console.WriteLine(JsonSerializer.Serialize(value));
+            Console.WriteLine(JsonSerializer.Serialize(value).ToString());
         }
 
         static void DeserializeTest()
         {
-            var jsonString = "{ 'name' : 'hello', 'age' : 15, a : [ 1, 2, 3, 4 ] }";
+            var jsonString = "{ \"name\" : \"hello\", \"age\" : 15, \"a\" : [ 1, 2, 3, 4 ] }";
             var jsonObj = JsonSerializer.Deserialize(jsonString);
 
-            var jsonUser = "{ Name : 'Tom', Age : 20 }";
+            var jsonUser = "{ \"Name\" : \"Tom\", \"Age\" : 20 }";
             var user = JsonSerializer.DeserializeObject<User>(jsonUser, s_userContract);
 
             var jsonCategory = "{\"Name\":\"Default\",\"Author\":{\"Name\":\"Jerry\",\"Age\":15},\"Posts\":[{\"Title\":\"Post 1\",\"CreateTime\":\"Fri, 01 Jan 2010 00:00:00 GMT\"},{\"Title\":\"Post 2\",\"CreateTime\":\"Mon, 01 Feb 2010 00:00:00 GMT\"},{\"Title\":\"Post 3\",\"CreateTime\":\"Mon, 01 Mar 2010 00:00:00 GMT\"}]}";

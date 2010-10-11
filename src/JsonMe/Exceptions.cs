@@ -3,18 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Reflection;
+using System.Json;
 
 namespace JsonMe
 {
-    public class JsonSerializationException : Exception
+    public class JsonException : Exception
     {
-        public JsonSerializationException(string message) : base(message) { }
+        public JsonException(string message) : base(message) { }
 
-        public JsonSerializationException(string message, Exception innerException)
+        public JsonException(string message, Exception innerException)
             : base(message, innerException) { }
     }
 
-    public class JsonFormatException : JsonSerializationException
+    public class JsonFormatException : JsonException
     {
         public JsonFormatException(string jsonString, Exception innerException)
             : base("Invalid JSON format.", innerException)
@@ -25,7 +26,15 @@ namespace JsonMe
         public string JsonString { get; private set; }
     }
 
-    public class KeyNotFoundException : JsonSerializationException
+    public class MappingException : JsonException
+    {
+        public MappingException(string message) : base(message) { }
+
+        public MappingException(string message, Exception innerException)
+            : base(message, innerException) { }
+    }
+
+    public class KeyNotFoundException : MappingException
     {
         public KeyNotFoundException(JsonObject jsonObj, string key) :
             base(BuildMessage(jsonObj, key))
@@ -45,7 +54,7 @@ namespace JsonMe
         }
     }
 
-    public class ContractMissingException : JsonSerializationException
+    public class ContractMissingException : MappingException
     {
         public ContractMissingException(object value) :
             base(BuildMessage(value))
@@ -63,7 +72,7 @@ namespace JsonMe
         }
     }
 
-    public class ConversionException : JsonSerializationException
+    public class ConversionException : MappingException
     {
         public IJsonProperty Property { get; private set; }
 
@@ -79,7 +88,7 @@ namespace JsonMe
         private static string BuildMessage(IJsonProperty property, object value)
         {
             return String.Format(
-                "Error occurred when converting value {0} for {1}", value, property);
+                "Error occurred when converting value {0} for {1}", value, property.PropertyInfo);
         }
     }
 }
