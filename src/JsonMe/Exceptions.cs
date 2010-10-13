@@ -50,7 +50,7 @@ namespace JsonMe
         private static string BuildMessage(JsonObject jsonObj, string key)
         {
             return String.Format(
-                "Cannot find the required key '{0}' in {1} ", jsonObj, key);
+                "Cannot find the required key '{0}' in {1} ", key, jsonObj);
         }
     }
 
