@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Reflection;
 using System.Json;
+using System.Collections;
 
 namespace JsonMe
 {
@@ -47,7 +48,7 @@ namespace JsonMe
     }
 
     public class JsonComplexProperty<TProperty> : JsonPropertyBase<JsonComplexProperty<TProperty>>
-        where TProperty : class, new()
+        where TProperty : class
     {
         public JsonComplexProperty(PropertyInfo propertyInfo)
             : base(propertyInfo) { }
@@ -79,14 +80,36 @@ namespace JsonMe
     }
 
     public class JsonArrayProperty<TElement> : JsonPropertyBase<JsonArrayProperty<TElement>>
-        where TElement : class, new()
+        where TElement : class
     {
         public JsonArrayProperty(PropertyInfo propertyInfo)
-            : base(propertyInfo) { }
+            : base(propertyInfo)
+        {
+            this.Converter(new DefaultConverter());
+        }
 
         public JsonArrayProperty<TElement> ElementContract(JsonContract<TElement> contract)
         {
             return this.Converter(new ContractConverter(contract));
+        }
+
+        private class DefaultConverter : IJsonConverter
+        {
+            public JsonValue ToJsonValue(Type type, object value)
+            {
+                return JsonSerializer.Serialize(value);
+            }
+
+            public object FromJsonValue(Type type, JsonValue value)
+            {
+                var list = (IList)Activator.CreateInstance(type);
+                foreach (var item in (JsonArray)value)
+                {
+                    list.Add(JsonUtils<TElement>.FromJsonValue(item));
+                }
+
+                return list;
+            }
         }
 
         private class ContractConverter : IJsonConverter

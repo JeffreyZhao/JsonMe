@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Json;
 using System.Collections;
+using System.Linq.Expressions;
 
 namespace JsonMe
 {
@@ -110,6 +111,52 @@ namespace JsonMe
             }
 
             PropertySetter.Set(entity, property.PropertyInfo, propertyValue);
+        }
+    }
+
+    internal static class JsonUtils<T>
+    {
+        static JsonUtils()
+        {
+            var jsonValueExpr = Expression.Parameter(typeof(JsonValue), "jsonValue");
+            var convertExpr = GetConvertExpression(jsonValueExpr, typeof(T));
+            var lambdaExpr = Expression.Lambda<Func<JsonValue, T>>(convertExpr, jsonValueExpr);
+            s_fromJsonValue = lambdaExpr.Compile();
+        }
+
+        private static Func<JsonValue, T> s_fromJsonValue;
+
+        public static T FromJsonValue(JsonValue jsonValue)
+        {
+            return s_fromJsonValue(jsonValue);
+        }
+
+        private static Expression GetConvertExpression(Expression instanceExpr, Type targetType)
+        {
+            var mediateType = instanceExpr.Type;
+
+            if (mediateType == typeof(object))
+            {
+                // (TargetType)instance
+                return Expression.Convert(instanceExpr, targetType);
+            }
+
+            while (mediateType != typeof(object))
+            {
+                try
+                {
+                    // (MediateType)instace
+                    var mediateExpr = Expression.Convert(instanceExpr, mediateType);
+                    // (TargetType)(MediateType)instance
+                    return Expression.Convert(mediateExpr, targetType);
+                }
+                catch
+                {
+                    mediateType = mediateType.BaseType;
+                }
+            }
+
+            throw new Exception();
         }
     }
 }

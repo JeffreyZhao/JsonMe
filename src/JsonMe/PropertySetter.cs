@@ -89,7 +89,8 @@ namespace JsonMe
 
         private static SetterCache s_setterCache = new SetterCache();
 
-        public static void Set(object entity, PropertyInfo propertyInfo, object propertyValue)        {
+        public static void Set(object entity, PropertyInfo propertyInfo, object propertyValue)
+        {
             var cacheKey = new CacheKey
             {
                 PropertyInfo = propertyInfo,
@@ -110,5 +111,6 @@ namespace JsonMe
             {
                 throw new MappingException("Error occurred when setting " + propertyInfo, ex);
             }
-        }   }
+        }
+   }
 }

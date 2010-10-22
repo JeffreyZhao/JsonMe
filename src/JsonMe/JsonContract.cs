@@ -21,7 +21,7 @@ namespace JsonMe
         }
 
         public JsonComplexProperty<TProperty> ComplexProperty<TProperty>(Expression<Func<T, TProperty>> propertyExpr)
-            where TProperty : class, new()
+            where TProperty : class
         {
             var propertyInfo = (PropertyInfo)(propertyExpr.Body as MemberExpression).Member;
             var property = new JsonComplexProperty<TProperty>(propertyInfo);
@@ -31,7 +31,7 @@ namespace JsonMe
         }
 
         public JsonArrayProperty<TElement> ArrayProperty<TElement>(Expression<Func<T, IEnumerable<TElement>>> propertyExpr)
-            where TElement : class, new()
+            where TElement : class
         {
             var propertyInfo = (PropertyInfo)(propertyExpr.Body as MemberExpression).Member;
             var property = new JsonArrayProperty<TElement>(propertyInfo);

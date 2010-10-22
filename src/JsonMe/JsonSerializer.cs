@@ -49,11 +49,11 @@ namespace JsonMe
         }
 
         public static T DeserializeObject<T>(JsonObject jsonObj, JsonContract<T> contract)
-            where T : class, new()
+            where T : class
         {
             if (jsonObj == null) return null;
 
-            var entity = new T();
+            var entity = (T)Activator.CreateInstance(typeof(T));
 
             foreach (var property in contract.Properties)
             {
@@ -70,7 +70,7 @@ namespace JsonMe
         }
 
         public static List<T> DeserializeArray<T>(JsonArray jsonArray, JsonContract<T> contract)
-            where T : class, new()
+            where T : class
         {
             return jsonArray.Select(e => DeserializeObject((JsonObject)e, contract)).ToList();
         }
